@@ -12,6 +12,7 @@ Suports even when VRChat exits and start again.
 ## What Events it supports?
 * Player Join/Leave
 * World change and it's instance link
+* URL of strings the worls is trying to download
 * Microphone change
 * VRChat Build (on vrc startup)
 * Logged in as (on vrc startup)
