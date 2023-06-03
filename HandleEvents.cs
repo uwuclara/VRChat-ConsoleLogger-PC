@@ -8,12 +8,9 @@ namespace VRChat_ConsoleLogger_PC;
 internal static class HandleEvents
 {
     private const string urlPattern = @"(https?://[^\s]+)";
-    private static string lastVRCXVideoMsg = "The Cum Movie";
-    private static string lastVRCXUserMsg = "Your Mom";
-    private static string lastMicChangeMsg = "Very";
-    private static string lastVideoPlayMsg = "Gay";
     private static int oscPort = 9000;
-    
+    private static readonly Dictionary<string, string> _dictionary = new ();
+
     internal static void display(List<string> lines)
     {
         foreach (var line in lines)
@@ -45,11 +42,20 @@ internal static class HandleEvents
             else if (line.Contains("Microphone device changing to "))
             {
                 var msg = line.Split(new[] { "Microphone device changing to " }, StringSplitOptions.None)[1];
+
+                if (_dictionary.TryGetValue("lastMicChangeMsg", out var lastMicChangeMsg))
+                {
+                    if (lastMicChangeMsg != msg)
+                    {
+                        Logger.msg(ConsoleColor.Gray, "Microphone changed to: " + lastMicChangeMsg, eventType.Info);
+                    }
+                }
+                else
+                {
+                    Logger.msg(ConsoleColor.Gray, "Microphone changed to: " + msg, eventType.Info);
+                }
                 
-                if (msg == lastMicChangeMsg) continue;
-                lastMicChangeMsg = msg;
-                
-                Logger.msg(ConsoleColor.Gray, "Microphone changed to: " + lastMicChangeMsg, eventType.Info);
+                _dictionary["lastMicChangeMsg"] = msg;
             }
             else if (line.Contains("VRChat Build: "))
             {
@@ -101,25 +107,82 @@ internal static class HandleEvents
 
                 if (matches.Count > 0)
                 {
-                    var url = matches[1].Groups[1].Value;
+                    // var resolvedURL = matches[1].Groups[1].Value;
+                    var url = matches[0].Groups[1].Value;
                     
-                    if (url == lastVideoPlayMsg) continue;
-                    lastVideoPlayMsg = url;
-                    
-                    Logger.msg(ConsoleColor.Yellow, "Playing video: " + lastVideoPlayMsg, eventType.VideoPlayer);
+                    if (_dictionary.TryGetValue("lastVideoPlayMsg", out var lastVideoPlayMsg))
+                    {
+                        if (lastVideoPlayMsg != url)
+                        {
+                            Logger.msg(ConsoleColor.Yellow, "Playing video: " + url[..^1], eventType.VideoPlayer);
+                        }
+                    }
+                    else
+                    {
+                        Logger.msg(ConsoleColor.Yellow, "Playing video: " + url[..^1], eventType.VideoPlayer);
+                    }
+                
+                    _dictionary["lastVideoPlayMsg"] = url;
                 }
             }
             else if (line.Contains("[VRCX]"))
             {
                 var msg1 = line.Split(new[] { "[VRCX] " }, StringSplitOptions.None)[1];
                 var msg = msg1.Split(new[] { "," }, StringSplitOptions.None);
-                
-                if ((lastVRCXUserMsg == msg.ElementAt(msg.Length - 2) || !int.TryParse(msg.ElementAt(msg.Length - 2), out var lul)) && lastVRCXVideoMsg == msg.Last()) continue; // it's spamming when it's paused
-                if (int.TryParse(msg.ElementAt(msg.Length - 2), out var lul1) && int.TryParse(msg.Last(), out var lul2)) continue;
-                lastVRCXUserMsg = msg.ElementAt(msg.Length - 2);
-                lastVRCXVideoMsg = msg.Last();
 
-                Logger.msg(ConsoleColor.Yellow, "VRCX Supported World: User (" + lastVRCXUserMsg +") put on video (" + lastVRCXVideoMsg + ")", eventType.VideoPlayer);
+                string user, video;
+                
+                if (msg.Last().Contains("720p") || msg.Last().Contains("1080p") || msg.Last().Contains("480p"))
+                {
+                    if (string.IsNullOrEmpty(msg.ElementAt(msg.Length - 3)) ||
+                        string.IsNullOrEmpty(msg.ElementAt(msg.Length - 2))) return;
+                    
+                    user = msg.ElementAt(msg.Length - 3);
+                    video = msg.ElementAt(msg.Length - 2);
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(msg.Last()) ||
+                        string.IsNullOrEmpty(msg.ElementAt(msg.Length - 2))) return;
+                    
+                    user = msg.ElementAt(msg.Length - 2);
+                    video = msg.Last();
+                }
+                
+                if (float.TryParse(user, out var lul4) && float.TryParse(video, out var lul5)) continue;
+                
+                if (_dictionary.TryGetValue("lastVRCXUserMsg", out var lastVRCXUserMsg) && _dictionary.TryGetValue("lastVRCXVideoMsg", out var lastVRCXVideoMsg))
+                {
+                    if (lastVRCXVideoMsg != video)
+                    {
+                        Logger.msg(ConsoleColor.Yellow, "VRCX Supported World: User (" + user +") put on video (" + video + ")", eventType.VideoPlayer);
+                    }
+                    else
+                    {
+                        if (!float.TryParse(user, out var lul))
+                        {
+                            if (lastVRCXUserMsg != user)
+                            {
+                                Logger.msg(ConsoleColor.Yellow, "VRCX Supported World: User (" + user +") put on video (" + video + ")", eventType.VideoPlayer);
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                }
+                else
+                {
+                    Logger.msg(ConsoleColor.Yellow, "VRCX Supported World: User (" + user +") put on video (" + video + ")", eventType.VideoPlayer);
+                }
+            
+                _dictionary["lastVRCXUserMsg"] = user;
+                _dictionary["lastVRCXVideoMsg"] = video;
             }
         }
     }

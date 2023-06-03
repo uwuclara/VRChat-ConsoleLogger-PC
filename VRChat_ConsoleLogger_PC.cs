@@ -10,7 +10,7 @@ namespace VRChat_ConsoleLogger_PC;
 public static class VRChat_ConsoleLogger_PC
 {
     public const string Name = "VRChatConsoleLoggerPC";
-    public const string Version = "1.0.2";
+    public const string Version = "1.0.3";
     private static long readOffset;
     private static bool needClean;
 
