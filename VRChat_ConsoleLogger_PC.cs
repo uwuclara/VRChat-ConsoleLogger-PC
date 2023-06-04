@@ -10,7 +10,7 @@ namespace VRChat_ConsoleLogger_PC;
 public static class VRChat_ConsoleLogger_PC
 {
     public const string Name = "VRChatConsoleLoggerPC";
-    public const string Version = "1.0.3";
+    public const string Version = "1.0.4";
     private static long readOffset;
     private static bool needClean;
 
@@ -30,15 +30,18 @@ public static class VRChat_ConsoleLogger_PC
         while (true)
         {
             while (Process.GetProcessesByName("VRChat").Length == 0) 
-                Thread.Sleep(1);
+                Thread.Sleep(1 * 1000);
 
             var processes = Process.GetProcessesByName("VRChat");
             if (processes is { Length: > 0 })
             {
                 var VRChatProcess = processes[0];
 
-                if (VRChatProcess.HasExited) 
+                if (VRChatProcess.HasExited)
+                {
+                    Thread.Sleep(1 * 1000);
                     continue;
+                }
 
                 if (needClean)
                 {
@@ -64,7 +67,7 @@ public static class VRChat_ConsoleLogger_PC
                             if (VRChatProcess.StartTime.CompareTo(fileInfo.LastWriteTime) <= 0) selectedLogInfo = fileInfo;
                         }
 
-                        Thread.Sleep(1);
+                        Thread.Sleep(1 * 1000);
                     }
 
                     Logger.msg(ConsoleColor.DarkGreen, "VRChat LogFile found  (" + selectedLogInfo.Name + ")", HandleEvents.eventType.APP);
@@ -78,7 +81,7 @@ public static class VRChat_ConsoleLogger_PC
                     {
                         var lines = readLines(selectedLogInfo.FullName);
                         HandleEvents.display(lines);
-                        Thread.Sleep(1);
+                        Thread.Sleep(1 * 1000);
                     }
 
                     Logger.msg(ConsoleColor.DarkGreen, "VRChat Exited", HandleEvents.eventType.APP);
@@ -92,12 +95,12 @@ public static class VRChat_ConsoleLogger_PC
                     Logger.error("VRChat Folder not found!");
                     
                     while (true)
-                        Thread.Sleep(1);
+                        Thread.Sleep(1 * 1000);
                 }
             }
             else
             {
-                Thread.Sleep(1);
+                Thread.Sleep(1 * 1000);
             }
         }
     }
